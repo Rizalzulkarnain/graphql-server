@@ -1,4 +1,7 @@
 const { ApolloServer, gql } = require('apollo-server');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const typeDefs = gql`
   enum Status {
@@ -84,4 +87,8 @@ const resolvers = {
 };
 
 const server = new ApolloServer({ typeDefs, resolvers });
-server.listen().then(({ url }) => console.log(`Server started at ${url}`));
+server
+  .listen({
+    port: process.env.PORT || 5000,
+  })
+  .then(({ url }) => console.log(`Server started at ${url}`));
