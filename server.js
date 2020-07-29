@@ -1,4 +1,4 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql, PubSub } = require('apollo-server');
 const { GraphQLScalarType } = require('graphql');
 const { Kind } = require('graphql/language');
 const dotenv = require('dotenv');
@@ -79,6 +79,10 @@ const typeDefs = gql`
   type Mutation {
     addStore(store: StoreInput): [Store]
   }
+
+  type Subscription {
+    storeAdded: Store
+  }
 `;
 
 const colors = [
@@ -135,7 +139,16 @@ const stores = [
   },
 ];
 
+const pubsub = new PubSub();
+const STORE_ADDED = 'STORE_ADDED';
+
 const resolvers = {
+  Subscription: {
+    storeAdded: {
+      subscribe: () => pubsub.asyncIterator([STORE_ADDED]),
+    },
+  },
+
   Query: {
     stores: async () => {
       try {
@@ -173,9 +186,10 @@ const resolvers = {
       try {
         if (userId) {
           //Do mutation and of database stuff
-          await Store.create({
+          const newStore = await Store.create({
             ...store,
           });
+          pubsub.publish(STORE_ADDED, { storeAdded: newStore });
           const allStores = await Store.find();
           return allStores;
         }
